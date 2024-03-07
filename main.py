@@ -16,8 +16,33 @@ def initialize_app():
         app = firebase_admin.get_app('splitproject')
     return app
 
+def list_files_in_bucket(bucket):
+    blobs = bucket.list_blobs()
+
+    file_paths = []
+    for blob in blobs:
+        file_paths.append(blob.name)
+
+    return file_paths
+
 def main():
     app = initialize_app()
+    
+    bucket = storage.bucket(app=app)
+    
+    file_paths = list_files_in_bucket(bucket)
+
+    st.title("All Image Files:")
+    for image_path in file_paths:
+        blob = bucket.blob(image_path)
+        image_name = blob.name
+        image_bytes = blob.download_as_bytes()
+        
+        if image_bytes:
+            image = Image.open(io.BytesIO(image_bytes))
+            st.image(image, caption=image_name, use_column_width=True)
+        else:
+            st.write("Image not found.")
     
     st.title("View Images from Firebase Storage")
     
@@ -33,19 +58,6 @@ def main():
     # Let's see what we got!
     st.write("The id is: ", doc.id)
     st.write("The contents are: ", doc.to_dict())
-
-    # Image path in Firebase Storage
-    image_path = 'raw/2.png'
-    
-    bucket = storage.bucket(app=app)
-    blob = bucket.blob(image_path)
-    image_bytes = blob.download_as_bytes()
-    
-    if image_bytes:
-        image = Image.open(io.BytesIO(image_bytes))
-        st.image(image, caption='Image from Firebase Storage', use_column_width=True)
-    else:
-        st.write("Image not found.")
 
 if __name__ == "__main__":
     main()
